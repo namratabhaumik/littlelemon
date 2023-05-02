@@ -21,4 +21,6 @@ import restaurant.urls as restaurant_urls
 urlpatterns = [
     path('admin/', admin.site.urls), 
     path('restaurant/', include(restaurant_urls)),
+    path("auth/", include("djoser.urls")),
+    path("auth/", include("djoser.urls.authtoken")),
 ]

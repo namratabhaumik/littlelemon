@@ -41,7 +41,8 @@ INSTALLED_APPS = [
     'littlelemon',
     'restaurant',
     'rest_framework',
-    'rest_framework.authtoken'
+    'rest_framework.authtoken',
+    'djoser'
 ]
 
 MIDDLEWARE = [
