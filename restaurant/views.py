@@ -6,50 +6,66 @@ from rest_framework.views import APIView
 from restaurant.models import Menu
 
 # Create your views here.
+
+
 def index(request):
     return render(request, 'restaurant/index.html', {})
 
 
+@csrf_exempt
 def get_menu(request):
-    #print(Menu.objects)
-    menu_list = Menu.objects.values() #returns an itrable of dict
-    #print(type(menu_list)) #<class 'django.db.models.query.QuerySet'>
-    # for menu in menu_list:
-    #     print(type(menu)) #<class 'dict'>, can't access any other funcs inside the model class
-    
-    # menu_obj = Menu.objects.all() #returns an iterable of model class obj
-    # #print(type(menu_obj)) #<class 'django.db.models.query.QuerySet'>
-    # for menu in menu_obj:
-    #     print(type(menu)) #<class 'restaurant.models.Menu'>, can access every class attr
-        #print(menu.get_item()) #normal func call w/ class obj
-        #print(menu) #calls inbuilt func like __str__(self) if defined
+    menu_list = Menu.objects.values()
     return JsonResponse({'data': list(menu_list)})
 
 
-#For form-data input
 @csrf_exempt
 def modify_menu(request):
-    id = json.loads(request.POST.get('id'))
-    title = json.loads(request.POST.get('title'))
-    price = json.loads(request.POST.get('price'))
-    inventory = json.loads(request.POST.get('inventory'))
+    if request.method == 'POST':
+        try:
+            # If the request is in JSON format, load it
+            data = json.loads(request.body)
 
-    #saving new items + modifying saved items in django admin (db)
-    new_menu = Menu(id=id, title=title, price=price, inventory=inventory)
-    new_menu.save()
+            # Extract values from the data
+            id = data.get('id')
+            title = data.get('title')
+            price = data.get('price')
+            inventory = data.get('inventory')
 
-    return JsonResponse({'status':'Success'})
+            # Check if any data is missing
+            if not all([id, title, price, inventory]):
+                return JsonResponse({'error': 'Missing required fields'}, status=400)
+
+            # Check if item exists, and update if it does, otherwise create a new one
+            menu_item, created = Menu.objects.update_or_create(
+                id=id,
+                defaults={'title': title, 'price': price,
+                          'inventory': inventory}
+            )
+
+            if created:
+                return JsonResponse({'status': 'Item Created', 'id': menu_item.id})
+            else:
+                return JsonResponse({'status': 'Item Updated', 'id': menu_item.id})
+
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON format'}, status=400)
+
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=400)
 
 
-#For JSON data input
-class Modify_Menu(APIView):
-    def post(self,request):
-        id = request.data.get('id')
-        title = request.data.get('title')
-        price = request.data.get('price')
-        inventory = request.data.get('inventory')
+@csrf_exempt
+def delete_menu(request, id):
+    if request.method == 'DELETE':
+        try:
+            # Try to find the item by its ID
+            menu_item = Menu.objects.get(id=id)
 
-        new_menu = Menu(id=id, title=title, price=price, inventory=inventory)
-        new_menu.save()
+            # Delete the item
+            menu_item.delete()
 
-        return JsonResponse({'status':'Success'})
+            return JsonResponse({'status': 'Item Deleted'})
+        except Menu.DoesNotExist:
+            return JsonResponse({'error': 'Item not found'}, status=404)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=400)

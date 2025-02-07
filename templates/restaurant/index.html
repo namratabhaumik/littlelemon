@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Restaurant Menu</title>
+    <style>
+      /* Basic styling */
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+      }
+      form {
+        margin-bottom: 20px;
+      }
+      input {
+        margin: 5px;
+        padding: 8px;
+      }
+      button {
+        padding: 8px 12px;
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Restaurant Menu</h1>
+
+    <!-- Form for Adding/Updating Menu Item -->
+    <h3>Update Menu Item</h3>
+    <form id="menu-form">
+      <input
+        type="number"
+        id="id"
+        name="id"
+        placeholder="ID (to update)"
+        required
+      />
+      <input type="text" id="title" name="title" placeholder="Title" required />
+      <input
+        type="number"
+        id="price"
+        name="price"
+        placeholder="Price"
+        step="any"
+        required
+      />
+      <input
+        type="number"
+        id="inventory"
+        name="inventory"
+        placeholder="Inventory"
+        required
+      />
+      <button type="submit">Submit</button>
+    </form>
+
+    <!-- Display Menu -->
+    <h3>Menu</h3>
+    <ul id="menu-list"></ul>
+
+    <script>
+      // Fetch and display the menu on page load
+      function fetchMenu() {
+        fetch("/restaurant/get_menu")
+          .then((response) => response.json())
+          .then((data) => {
+            const menuList = document.getElementById("menu-list");
+            menuList.innerHTML = ""; // Clear the list first
+            data.data.forEach((item) => {
+              const li = document.createElement("li");
+              li.innerHTML = `${item.title} - $${item.price} 
+                        <button onclick="deleteMenuItem(${item.id})">Delete</button>`;
+              menuList.appendChild(li);
+            });
+          })
+          .catch((error) => console.error("Error fetching menu:", error));
+      }
+
+      // Submit form to add/update menu item
+      document
+        .getElementById("menu-form")
+        .addEventListener("submit", function (e) {
+          e.preventDefault();
+
+          const formData = new FormData(this);
+
+          // Convert formData to an object for easier access
+          const data = {};
+          formData.forEach((value, key) => {
+            data[key] = value;
+          });
+
+          // Log the data to see if it's correctly populated
+          console.log(data);
+
+          fetch("/restaurant/modify_menu", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json", // Specify that we're sending JSON
+            },
+            body: JSON.stringify(data), // Stringify the data object to JSON format
+          })
+            .then((response) => response.json())
+            .then((result) => {
+              if (result.status) {
+                alert(result.status); // Show success message
+                fetchMenu(); // Refresh the menu
+              } else {
+                alert("Error: " + result.error);
+              }
+            })
+            .catch((error) => alert("Error: " + error));
+        });
+
+      // Delete item function
+      function deleteMenuItem(id) {
+        if (confirm("Are you sure you want to delete this item?")) {
+          fetch(`/restaurant/delete_menu/${id}`, {
+            method: "DELETE",
+          })
+            .then((response) => response.json())
+            .then((result) => {
+              alert(result.status);
+              fetchMenu(); // Refresh the menu list after deletion
+            })
+            .catch((error) => {
+              alert("Error deleting item: " + error);
+              console.error("Error:", error);
+            });
+        }
+      }
+
+      // Call fetchMenu to display the menu when the page loads
+      fetchMenu();
+    </script>
+  </body>
+</html>
