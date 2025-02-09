@@ -55,9 +55,11 @@ jobs:
           echo "DB_PORT=${{ secrets.DB_PORT }}" >> $GITHUB_ENV
           echo "SECRET_KEY=${{ secrets.SECRET_KEY }}" >> $GITHUB_ENV
 
-      - name: Apply Migrations and Run Tests
+      - name: Install dependencies and run migrations
         run: |
+          python -m venv venv
           source venv/bin/activate
+          pip install -r requirements.txt
           python manage.py migrate
           python manage.py test
 
