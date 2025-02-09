@@ -9,26 +9,15 @@ on:
       - master
 
 jobs:
-  test:
+  build:
     runs-on: ubuntu-latest
-    services:
-      mysql:
-        image: mysql:8.0
-        env:
-          MYSQL_ROOT_PASSWORD: root
-          MYSQL_DATABASE: test_db
-          MYSQL_USER: test_user
-          MYSQL_PASSWORD: test_password
-        ports:
-          - 3306:3306
-        options: --health-cmd="mysqladmin ping --silent" --health-interval=10s --health-timeout=5s --health-retries=5
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v2
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v2
         with:
           python-version: "3.x"
 
@@ -37,48 +26,20 @@ jobs:
           python -m venv venv
           source venv/bin/activate
           pip install -r requirements.txt
-
-      - name: Wait for MySQL
+      - name: Set up environment variables
         run: |
-          echo "Waiting for MySQL to be available..."
-          for i in {1..30}; do
-            if mysql -h mysql -u test_user -ptest_password -e 'SELECT 1' test_db; then
-              echo "MySQL is ready!"
-              break
-            fi
-            echo "Waiting for MySQL..."
-            sleep 2
-          done
-
-      - name: Set up test environment variables
-        run: |
-          echo "DB_NAME=test_db" >> $GITHUB_ENV
+          echo "DB_NAME=littlelemon" >> $GITHUB_ENV
           echo "DB_USER=root" >> $GITHUB_ENV
-          echo "DB_PASSWORD=test_password" >> $GITHUB_ENV
-          echo "DB_HOST=6.tcp.ngrok.io" >> $GITHUB_ENV
-          echo "DB_PORT=18070" >> $GITHUB_ENV
+          echo "DB_PASSWORD=Academia99@" >> $GITHUB_ENV
+          echo "DB_HOST=127.0.0.1" >> $GITHUB_ENV
+          echo "DB_PORT=3306" >> $GITHUB_ENV
           echo "SECRET_KEY=${{ secrets.SECRET_KEY }}" >> $GITHUB_ENV
-
-      # - name: Grant MySQL access from all hosts
-      #   run: |
-      #     # Wait for MySQL to fully initialize
-      #     sleep 15
-      #     # Grant all privileges for root user
-      #     mysql -h 127.0.0.1 -u root -proot -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'%';"
-      #     mysql -h 127.0.0.1 -u root -proot -e "FLUSH PRIVILEGES;"
-
-      - name: Apply Migrations
-        run: |
-          source venv/bin/activate
-          python manage.py migrate
-
       - name: Run tests
         run: |
           source venv/bin/activate
           python manage.py test
-
   deploy:
-    needs: test
+    needs: build
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/master'
 
@@ -96,7 +57,6 @@ jobs:
           python -m venv venv
           source venv/bin/activate
           pip install -r requirements.txt
-
       - name: Deploy to Render
         run: |
           # Triggering Render deployment by pushing to GitHub repository (Render auto-deploys)
