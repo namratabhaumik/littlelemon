@@ -9,37 +9,80 @@ on:
       - master
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: test_db
+          MYSQL_USER: test_user
+          MYSQL_PASSWORD: test_password
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping --silent" --health-interval=10s --health-timeout=5s --health-retries=5
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: "3.x"
+
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: venv/
+          key: ${{ runner.os }}-python-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-python-
 
       - name: Install dependencies
         run: |
           python -m venv venv
           source venv/bin/activate
           pip install -r requirements.txt
+
+      - name: Wait for MySQL
+        run: |
+          echo "Waiting for MySQL to be available..."
+          for i in {1..30}; do
+            if mysql -h mysql -u ${{ secrets.MYSQL_USER }} -p${{ secrets.MYSQL_PASSWORD }} -e 'SELECT 1' ${{ secrets.MYSQL_DATABASE }}; then
+            echo "MySQL is ready!"
+            break
+            fi
+            echo "Waiting for MySQL... Attempt #$i"
+            sleep 5
+          done
+          if [ $i -eq 30 ]; then
+            echo "MySQL did not start in time, exiting..."
+            exit 1
+          fi
+
       - name: Set up environment variables
         run: |
-          echo "DB_NAME=littlelemon" >> $GITHUB_ENV
-          echo "DB_USER=root" >> $GITHUB_ENV
-          echo "DB_PASSWORD=Academia99@" >> $GITHUB_ENV
-          echo "DB_HOST=127.0.0.1" >> $GITHUB_ENV
-          echo "DB_PORT=3306" >> $GITHUB_ENV
+          echo "DB_NAME=${{ secrets.DB_NAME }}" >> $GITHUB_ENV
+          echo "DB_USER=${{ secrets.DB_USER }}" >> $GITHUB_ENV
+          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> $GITHUB_ENV
+          echo "DB_HOST=${{ secrets.DB_HOST }}" >> $GITHUB_ENV
+          echo "DB_PORT=${{ secrets.DB_PORT }}" >> $GITHUB_ENV
           echo "SECRET_KEY=${{ secrets.SECRET_KEY }}" >> $GITHUB_ENV
+
+      - name: Apply Migrations
+        run: |
+          source venv/bin/activate
+          python manage.py migrate
+
       - name: Run tests
         run: |
           source venv/bin/activate
-          python manage.py test
+          python manage.py test --keepdb
+
   deploy:
-    needs: build
+    needs: test
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/master'
 
@@ -57,6 +100,7 @@ jobs:
           python -m venv venv
           source venv/bin/activate
           pip install -r requirements.txt
+
       - name: Deploy to Render
         run: |
           # Triggering Render deployment by pushing to GitHub repository (Render auto-deploys)
