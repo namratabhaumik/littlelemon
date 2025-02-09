@@ -54,18 +54,18 @@ jobs:
         run: |
           echo "DB_NAME=test_db" >> $GITHUB_ENV
           echo "DB_USER=root" >> $GITHUB_ENV
-          echo "DB_PASSWORD=Academia99@" >> $GITHUB_ENV
-          echo "DB_HOST=127.0.0.1" >> $GITHUB_ENV
-          echo "DB_PORT=3306" >> $GITHUB_ENV
+          echo "DB_PASSWORD=test_password" >> $GITHUB_ENV
+          echo "DB_HOST=6.tcp.ngrok.io" >> $GITHUB_ENV
+          echo "DB_PORT=18070" >> $GITHUB_ENV
           echo "SECRET_KEY=${{ secrets.SECRET_KEY }}" >> $GITHUB_ENV
 
-      - name: Grant MySQL access from all hosts
-        run: |
-          # Wait for MySQL to fully initialize
-          sleep 15
-          # Grant all privileges for root user
-          mysql -h 127.0.0.1 -u root -proot -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'%';"
-          mysql -h 127.0.0.1 -u root -proot -e "FLUSH PRIVILEGES;"
+      # - name: Grant MySQL access from all hosts
+      #   run: |
+      #     # Wait for MySQL to fully initialize
+      #     sleep 15
+      #     # Grant all privileges for root user
+      #     mysql -h 127.0.0.1 -u root -proot -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'%';"
+      #     mysql -h 127.0.0.1 -u root -proot -e "FLUSH PRIVILEGES;"
 
       - name: Apply Migrations
         run: |
