@@ -19,6 +19,5 @@ HTML, CSS: Frontend technologies for creating the user interface.\
 
 ### APIs created
 
-GET API: restaurant/get_menu \
-POST API: restaurant/modify_menu_class_based, modify_menu\
-Checkout the project on branch_1
+GET API: restaurant/get_menu
+POST API: restaurant/modify_menu
