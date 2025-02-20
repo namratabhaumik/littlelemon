@@ -4,6 +4,9 @@
 
 The LittleLemon Web Application is a fully dynamic and scalable web application built using Django as part of the Meta Backend Developer Specialization. The goal of this project was to explore CI/CD using **Github Actions**. It includes functionalities like product management, inventory tracking and order handling. The project follows modern web development practices and integrates advanced tools for deployment and automation, ensuring a smooth and efficient user experience.
 
+### Medium Link
+[A Deep Dive into CI/CD: Automating My Django Deployments with GitHub Actions](https://namrata-bhaumik.medium.com/a-deep-dive-into-ci-cd-automating-my-django-deployments-with-github-actions-5dd82c44129c?source=friends_link&sk=73a354baa4d2abce39b2056e0bdeeba2)
+
 ### Features
 
 - **Product Management**: Admin users can add, update, and delete products. Each product includes details like name, price, and description.
